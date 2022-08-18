@@ -80,6 +80,7 @@ namespace DigitusIdentity.Controllers
         
         public IActionResult UserList()
         {
+            ViewBag.OnlineCount = OnlineUser.LoggedInUsers.Count;
             return View(_userManager.Users);
         }
 

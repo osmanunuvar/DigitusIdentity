@@ -5,6 +5,7 @@ using DigitusIdentity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DigitusIdentity.Controllers
@@ -52,8 +53,13 @@ namespace DigitusIdentity.Controllers
                 return View(model);
             }
             var result = await _signInManager.PasswordSignInAsync(user, model.Password, true, false);
-            if (result.Succeeded)
+            if (result.Succeeded)//
             {
+                if (!OnlineUser.LoggedInUsers.Any(x=>x.Email==model.Email))
+                {
+                    OnlineUser.LoggedInUsers.Add(new LoggedInUser { Email = model.Email, LoginTime = DateTime.Now });//
+                }
+                
                 return Redirect(model.ReturnUrl??"~/");
             }
             ModelState.AddModelError("", "username or password is incorrect");
@@ -109,8 +115,14 @@ namespace DigitusIdentity.Controllers
             return View(model);
         }
 
-        public async Task<IActionResult> Logout(LoginModel model)
-        {
+        public async Task<IActionResult> Logout()
+        {//
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            var result = OnlineUser.LoggedInUsers.FirstOrDefault(x => x.Email == user.Email);
+            if (result != null) 
+            {
+                OnlineUser.LoggedInUsers.Remove(result);
+            }
             await _signInManager.SignOutAsync();
             TempData.Put("message", new AlertMessage()
             {
@@ -118,6 +130,7 @@ namespace DigitusIdentity.Controllers
                 Message = "You have been succesfully logged out.",
                 AlertType = "warning"
             });
+            
             return Redirect("~/");
         }
 
